@@ -176,11 +176,9 @@
 		<!-- MyPet -->
 		<dependency>
 			<groupId>de.keyle</groupId>
-			<artifactId>mypet</artifactId>
-			<version>3.11-SNAPSHOT</version>
-			<scope>system</scope>
-			<!-- Temporary solution for replacing repository -->
-			<systemPath>${basedir}/libs/mypet-3.12.jar</systemPath>
+			<artifactId>mypet-api</artifactId>
+			<version>4.0.0</version>
+			<scope>provided</scope>
 		</dependency>
 		<!-- PyroFishingPro -->
 		<dependency>
@@ -272,10 +270,10 @@
 			<url>https://repo.codemc.io/repository/EvenMoreFish/</url>
 		</repository>
 		<!-- MyPet -->
-		<!--		<repository>-->
-		<!--			<id>mypet-repo</id>-->
-		<!--			<url>https://repo.mypet-plugin.de/</url>-->
-		<!--		</repository>-->
+		<repository>
+			<id>mypet-releases</id>
+			<url>https://repo.userderezzed.dev/releases</url>
+		</repository>
 	</repositories>
 	<!-- Builds Plugin -->
 	<build>
