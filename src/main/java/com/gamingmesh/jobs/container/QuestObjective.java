@@ -37,6 +37,9 @@ public class QuestObjective {
         try {
 
             String mats = split[1].toUpperCase();
+            // Comma separates INDEPENDENT objectives (each needs its own full amount).
+            // Ampersand (&) inside one of those entries separates EITHER/OR targets that
+            // share a single counter, e.g. Break;iron_ore&deepslate_iron_ore;32
             String[] co = mats.split(",");
 
             int amount = 1;
@@ -45,25 +48,70 @@ public class QuestObjective {
 
             if (co.length > 0) {
                 for (String materials : co) {
-                    KeyValues kv = Jobs.getConfigManager().getKeyValue(materials, actionType, jobName);
-
-                    if (kv == null)
-                        continue;
-
-                    list.add(new QuestObjective(actionType, kv.getId(), kv.getMeta(), (kv.getType() + kv.getSubType()).toUpperCase(), amount));
+                    QuestObjective obj = buildObjective(materials, actionType, jobName, amount);
+                    if (obj != null)
+                        list.add(obj);
                 }
             } else {
-                KeyValues kv = Jobs.getConfigManager().getKeyValue(mats, actionType, jobName);
-
-                if (kv != null) {
-                    list.add(new QuestObjective(actionType, kv.getId(), kv.getMeta(), (kv.getType() + kv.getSubType()).toUpperCase(), amount));
-                }
+                QuestObjective obj = buildObjective(mats, actionType, jobName, amount);
+                if (obj != null)
+                    list.add(obj);
             }
         } catch (Exception e) {
             CMIMessages.consoleMessage("Job " + jobName + " has incorrect quest objective (" + objective + ")!");
         }
 
         return list;
+    }
+
+    // Builds a single QuestObjective out of one comma-segment. If that segment
+    // contains one or more '&' separators, all listed materials are merged into
+    // ONE objective (either/or) that shares a single progress counter, instead of
+    // being split into several independent objectives.
+    private static QuestObjective buildObjective(String materialToken, ActionType actionType, String jobName, int amount) {
+        String[] orGroup = materialToken.split("&");
+
+        if (orGroup.length <= 1) {
+            KeyValues kv = Jobs.getConfigManager().getKeyValue(materialToken, actionType, jobName);
+            if (kv == null)
+                return null;
+
+            return new QuestObjective(actionType, kv.getId(), kv.getMeta(), (kv.getType() + kv.getSubType()).toUpperCase(), amount);
+        }
+
+        List<String> names = new ArrayList<String>();
+        Integer firstId = null;
+        String firstMeta = null;
+
+        for (String single : orGroup) {
+            single = single.trim();
+            if (single.isEmpty())
+                continue;
+
+            KeyValues kv = Jobs.getConfigManager().getKeyValue(single, actionType, jobName);
+            if (kv == null) {
+                CMIMessages.consoleMessage("Job " + jobName + " has unknown material '" + single + "' in either/or quest objective!");
+                continue;
+            }
+
+            String targetName = (kv.getType() + kv.getSubType()).toUpperCase();
+            if (!names.contains(targetName))
+                names.add(targetName);
+
+            if (firstId == null) {
+                firstId = kv.getId();
+                firstMeta = kv.getMeta();
+            }
+        }
+
+        if (names.isEmpty())
+            return null;
+
+        // Joining the resolved names back with '&' keeps them as the single map key used
+        // for matching (see QuestProgression#objectiveKeyMatches), so breaking ANY of the
+        // listed blocks increments the SAME shared counter.
+        String combinedName = String.join("&", names);
+        return new QuestObjective(actionType, firstId, firstMeta, combinedName, amount);
     }
 
     public QuestObjective(ActionType action, int id, String meta, String name, int amount) {
