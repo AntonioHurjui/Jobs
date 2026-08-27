@@ -214,6 +214,21 @@ public class QuestProgression {
             return Util.enchantMatchesActionInfo(objectiveKey, (EnchantActionInfo) actionInfo);
         }
 
+        // Either/or objectives are stored as a single key with '&' joining every
+        // accepted material, e.g. "IRON_ORE&DEEPSLATE_IRON_ORE". Matching ANY one of
+        // them is enough to count progress toward that shared objective.
+        if (objectiveKey.indexOf('&') != -1) {
+            for (String part : objectiveKey.split("&")) {
+                if (singleKeyMatches(part, actionInfo))
+                    return true;
+            }
+            return false;
+        }
+
+        return singleKeyMatches(objectiveKey, actionInfo);
+    }
+
+    private static boolean singleKeyMatches(String objectiveKey, ActionInfo actionInfo) {
         return (objectiveKey.equalsIgnoreCase(actionInfo.getNameWithSub()) ||
             objectiveKey.equalsIgnoreCase(actionInfo.getName()));
     }
