@@ -134,8 +134,7 @@ public class quests implements Cmd {
                 for (java.util.Map<String, QuestObjective> oneAction : quest.getObjectives().values()) {
                     for (Entry<String, QuestObjective> oneObjective : oneAction.entrySet()) {
                         hoverList.add(Jobs.getLanguage().getMessage("command.info.output." + oneObjective.getValue().getAction().toString().toLowerCase() + ".info") + " " +
-                            Jobs.getNameTranslatorManager().translate(oneObjective.getKey(), oneObjective.getValue().getAction(), oneObjective.getValue().getTargetId(), oneObjective.getValue()
-                                .getTargetMeta(), oneObjective.getValue().getTargetName())
+                            translateObjectiveName(oneObjective.getKey(), oneObjective.getValue())
                             + " " + q.getAmountDone(oneObjective.getValue()) + "/"
                             + oneObjective.getValue().getAmount());
                     }
@@ -206,8 +205,7 @@ public class quests implements Cmd {
                 for (java.util.Map<String, QuestObjective> oneAction : quest.getObjectives().values()) {
                     for (Entry<String, QuestObjective> oneObjective : oneAction.entrySet()) {
                         hoverList.add(Jobs.getLanguage().getMessage("command.info.output." + oneObjective.getValue().getAction().toString().toLowerCase() + ".info") + " " +
-                            Jobs.getNameTranslatorManager().translate(oneObjective.getKey(), oneObjective.getValue().getAction(), oneObjective.getValue().getTargetId(), oneObjective.getValue()
-                                .getTargetMeta(), oneObjective.getValue().getTargetName())
+                            translateObjectiveName(oneObjective.getKey(), oneObjective.getValue())
                             + " " + q.getAmountDone(oneObjective.getValue()) + "/"
                             + oneObjective.getValue().getAmount());
                     }
@@ -254,5 +252,25 @@ public class quests implements Cmd {
         gui.fillEmptyButtons();
         gui.open();
 
+    }
+
+    // Either/or quest objectives are stored as a single key joining every accepted
+    // material with '&' (see QuestObjective#buildObjective), e.g.
+    // "IRON_ORE&DEEPSLATE_IRON_ORE". For display we translate each material
+    // individually and join the friendly names with '/' instead of showing the raw key.
+    private static String translateObjectiveName(String objectiveKey, QuestObjective objective) {
+        if (objectiveKey.indexOf('&') == -1) {
+            return Jobs.getNameTranslatorManager().translate(objectiveKey, objective.getAction(), objective.getTargetId(),
+                objective.getTargetMeta(), objective.getTargetName());
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (String part : objectiveKey.split("&")) {
+            if (sb.length() > 0)
+                sb.append("/");
+            sb.append(Jobs.getNameTranslatorManager().translate(part, objective.getAction(), objective.getTargetId(),
+                objective.getTargetMeta(), part));
+        }
+        return sb.toString();
     }
 }
